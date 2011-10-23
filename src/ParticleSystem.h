@@ -41,6 +41,9 @@ public:
 	std::vector<GLfloat> texCoords;
 	std::vector<ci::ColorA> colors;
 	std::vector<Particle> particles;
+
+	// DEBUG
+	float _debugColor;
 };
 
 } /* namespace particle */

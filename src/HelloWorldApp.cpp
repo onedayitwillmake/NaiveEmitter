@@ -47,7 +47,7 @@ public:
 	void shutdown();
 
 	ci::gl::Texture texture;
-	particle::ParticleSystem emitter;
+	std::vector<particle::ParticleSystem*> emitterList;
 };
 
 void HelloWorldApp::prepareSettings( ci::app::AppBasic::Settings *settings ) {
@@ -61,14 +61,24 @@ void HelloWorldApp::setup() {
 	format.setMinFilter( GL_NEAREST );
 	format.setMagFilter( GL_NEAREST );
 	texture = ci::gl::Texture( ci::loadImage( loadResource( RES_WHEEL ) ), format );
+
+	for( size_t i = 0; i < 300; ++i ) {
+		emitterList.push_back( new particle::ParticleSystem() );
+	}
 }
 
 void HelloWorldApp::mouseDown( ci::app::MouseEvent event ) {
-
+	for(std::vector< particle::ParticleSystem*>::iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
+		(*itr)->clear();
+//		itr->clear();
+	}
 }
 
 void HelloWorldApp::update() {
-	emitter.update();
+
+	for(std::vector<particle::ParticleSystem*>::iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
+		(*itr)->update();
+	}
 }
 
 void HelloWorldApp::draw() {
@@ -77,6 +87,10 @@ void HelloWorldApp::draw() {
 	ci::gl::clear( ci::Color( 0, 0, 0 ) );
 
 	ci::gl::enableAdditiveBlending();
+
+	if( emitterList.size() == 0 ) return;
+	particle::ParticleSystem* emitter = emitterList.at( ci::Rand::randInt(0, emitterList.size() - 1 ) );
+
 	if ( texture ) {
 		ci::gl::color( ci::ColorA(1.0f, 1.0f, 1.0f, 1.0f) );
 
@@ -91,29 +105,29 @@ void HelloWorldApp::draw() {
 			const ci::Rectf srcCoords = texture.getAreaTexCoords( srcArea );
 
 
-
-			emitter.add( pos, ci::Rand::randVec2f() * 1.5, srcCoords, destRect );
+			// Add a particle to any random emitter
+			emitter->add( pos, ci::Rand::randVec2f() * 1.5, srcCoords, destRect );
 
 		glEnableClientState( GL_VERTEX_ARRAY );
-		glVertexPointer( 2, GL_FLOAT, 0, &(emitter.verts)[0] );
-
 		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-		glTexCoordPointer( 2, GL_FLOAT, 0, &(emitter.texCoords)[0] );
-
 		glEnableClientState( GL_COLOR_ARRAY );
-		glColorPointer( 4, GL_FLOAT, 0, &(emitter.colors)[0].r );
-
-		glDrawArrays( GL_TRIANGLES, 0, emitter.verts.size() / 2 );
-
+		for(std::vector<particle::ParticleSystem*>::const_iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
+			glVertexPointer( 2, GL_FLOAT, 0, &((*itr)->verts)[0] );
+			glTexCoordPointer( 2, GL_FLOAT, 0, &((*itr)->texCoords)[0] );
+			glColorPointer( 4, GL_FLOAT, 0, &((*itr)->colors)[0].r );
+			glDrawArrays( GL_TRIANGLES, 0, (*itr)->verts.size() / 2 );
+		}
 		texture.disable();
 
 		ci::gl::enableAlphaBlending();
 		ci::gl::color( ci::ColorA(1.0f, 1.0f, 1.0f, 1.0f) );
 
-		static ci::Font font = ci::Font( "monaco", 10.0f );
-		std::stringstream particleCountSS;
-		particleCountSS << emitter.particles.size() << std::endl;
-		ci::gl::drawString( particleCountSS.str(), ci::Vec2i(5, 5), ci::ColorA(1,1,1,1), font );
+//		static ci::Font font = ci::Font( "monaco", 10.0f );
+//		std::stringstream particleCountSS;
+//		particleCountSS << emitter.particles.size() << std::endl;
+//		std::cerr << emitter.particles.size() << std::endl;
+
+//		ci::gl::drawString( particleCountSS.str(), ci::Vec2i(5, 5), ci::ColorA(1,1,1,1), font );
 	}
 }
 

@@ -6,12 +6,12 @@
  */
 
 #include "ParticleSystem.h"
-
+#include "cinder/Rand.h"
 
 namespace particle {
 
 ParticleSystem::ParticleSystem() {
-	// TODO Auto-generated constructor stub
+	_debugColor = ci::Rand::randFloat();
 }
 
 ParticleSystem::~ParticleSystem() {
@@ -39,7 +39,7 @@ void ParticleSystem::add( ci::Vec2f pos, ci::Vec2f velocity, ci::Rectf srcCoords
 	texCoords.push_back( srcCoords.getX1() ); texCoords.push_back( srcCoords.getY1() );
 
 	// Colors
-	ci::ColorA color = ci::ColorA(ci::CM_HSV, 1.0, 1.0, 0.4, 1.0);
+	ci::ColorA color = ci::ColorA(ci::CM_HSV, _debugColor, 1.0, 0.4, 1.0);
 	colors.push_back( color ); colors.push_back( color );
 	colors.push_back( color ); colors.push_back( color );
 	colors.push_back( color ); colors.push_back( color );
