@@ -18,7 +18,6 @@
 
 namespace particle {
 
-typedef std::vector<GLfloat> GLFloatVector;
 struct Particle {
 	size_t index;
 	ci::Vec2f speed;
@@ -35,7 +34,6 @@ public:
 	void draw();
 	void update();
 	void clear();
-
 
 	std::vector<GLfloat> verts;
 	std::vector<GLfloat> texCoords;

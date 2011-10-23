@@ -37,7 +37,7 @@
 
 #include "ParticleSystem.h"
 
-class HelloWorldApp : public ci::app::AppBasic {
+class NaiveEmitter : public ci::app::AppBasic {
 public:
 	void setup();
 	void prepareSettings( ci::app::AppBasic::Settings *settings );
@@ -48,13 +48,16 @@ public:
 
 	ci::gl::Texture texture;
 	std::vector<particle::ParticleSystem*> emitterList;
+	size_t totalParticleCount;
 };
 
-void HelloWorldApp::prepareSettings( ci::app::AppBasic::Settings *settings ) {
+void NaiveEmitter::prepareSettings( ci::app::AppBasic::Settings *settings ) {
 	settings->setWindowSize( 800, 600 );
 }
 
-void HelloWorldApp::setup() {
+void NaiveEmitter::setup() {
+	totalParticleCount = 0;
+
 	// Test loading a texture
 	ci::gl::Texture::Format format;
 	format.enableMipmapping( false );
@@ -67,21 +70,22 @@ void HelloWorldApp::setup() {
 	}
 }
 
-void HelloWorldApp::mouseDown( ci::app::MouseEvent event ) {
+void NaiveEmitter::mouseDown( ci::app::MouseEvent event ) {
 	for(std::vector< particle::ParticleSystem*>::iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
 		(*itr)->clear();
-//		itr->clear();
 	}
 }
 
-void HelloWorldApp::update() {
+void NaiveEmitter::update() {
 
+	totalParticleCount = 0;
 	for(std::vector<particle::ParticleSystem*>::iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
 		(*itr)->update();
+		totalParticleCount += (*itr)->verts.size();
 	}
 }
 
-void HelloWorldApp::draw() {
+void NaiveEmitter::draw() {
 	// clear out the window with black
 	ci::Color aColor = ci::Color( 0, 0, 0 );
 	ci::gl::clear( ci::Color( 0, 0, 0 ) );
@@ -94,7 +98,6 @@ void HelloWorldApp::draw() {
 	if ( texture ) {
 		ci::gl::color( ci::ColorA(1.0f, 1.0f, 1.0f, 1.0f) );
 
-		texture.enableAndBind();
 			const float scale = ci::Rand::randFloat(0.1, 1.5);
 			const float halfWidth = texture.getCleanWidth() / 2.0f * scale;
 			const float halfHeight = texture.getCleanHeight() / 2.0f * scale;
@@ -108,32 +111,36 @@ void HelloWorldApp::draw() {
 			// Add a particle to any random emitter
 			emitter->add( pos, ci::Rand::randVec2f() * 1.5, srcCoords, destRect );
 
-		glEnableClientState( GL_VERTEX_ARRAY );
-		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-		glEnableClientState( GL_COLOR_ARRAY );
-		for(std::vector<particle::ParticleSystem*>::const_iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
-			glVertexPointer( 2, GL_FLOAT, 0, &((*itr)->verts)[0] );
-			glTexCoordPointer( 2, GL_FLOAT, 0, &((*itr)->texCoords)[0] );
-			glColorPointer( 4, GL_FLOAT, 0, &((*itr)->colors)[0].r );
-			glDrawArrays( GL_TRIANGLES, 0, (*itr)->verts.size() / 2 );
-		}
+		texture.enableAndBind();
+			glEnableClientState( GL_VERTEX_ARRAY );
+			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			glEnableClientState( GL_COLOR_ARRAY );
+				for(std::vector<particle::ParticleSystem*>::const_iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
+					glVertexPointer( 2, GL_FLOAT, 0, &((*itr)->verts)[0] );
+					glTexCoordPointer( 2, GL_FLOAT, 0, &((*itr)->texCoords)[0] );
+					glColorPointer( 4, GL_FLOAT, 0, &((*itr)->colors)[0].r );
+					glDrawArrays( GL_TRIANGLES, 0, (*itr)->verts.size() / 2 );
+				}
+			glDisableClientState( GL_VERTEX_ARRAY );
+			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+			glDisableClientState( GL_COLOR_ARRAY );
 		texture.disable();
 
-		ci::gl::enableAlphaBlending();
+
+
 		ci::gl::color( ci::ColorA(1.0f, 1.0f, 1.0f, 1.0f) );
+		ci::gl::enableAlphaBlending();
 
-//		static ci::Font font = ci::Font( "monaco", 10.0f );
-//		std::stringstream particleCountSS;
-//		particleCountSS << emitter.particles.size() << std::endl;
-//		std::cerr << emitter.particles.size() << std::endl;
-
-//		ci::gl::drawString( particleCountSS.str(), ci::Vec2i(5, 5), ci::ColorA(1,1,1,1), font );
+		static ci::Font font = ci::Font( "monaco", 10.0f );
+		std::stringstream ss;
+		ss << totalParticleCount << std::endl;
+		ci::gl::drawString( ss.str(), ci::Vec2i(5, 5), ci::ColorA(1,1,1,1), font );
 	}
 }
 
 
-void HelloWorldApp::shutdown() {
+void NaiveEmitter::shutdown() {
 	std::cout << "Shutdown..." << std::endl;
 	AppBasic::shutdown();
 }
-CINDER_APP_BASIC( HelloWorldApp, ci::app::RendererGl )
+CINDER_APP_BASIC( NaiveEmitter, ci::app::RendererGl )
