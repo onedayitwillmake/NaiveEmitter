@@ -81,7 +81,7 @@ void NaiveEmitter::update() {
 	totalParticleCount = 0;
 	for(std::vector<particle::ParticleSystem*>::iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
 		(*itr)->update();
-		totalParticleCount += (*itr)->verts.size();
+		totalParticleCount += (*itr)->particles.size();
 	}
 }
 
@@ -101,6 +101,7 @@ void NaiveEmitter::draw() {
 			const float scale = ci::Rand::randFloat(0.1, 1.5);
 			const float halfWidth = texture.getCleanWidth() / 2.0f * scale;
 			const float halfHeight = texture.getCleanHeight() / 2.0f * scale;
+
 
 			ci::Vec2f pos = getMousePos();
 			const ci::Area srcArea = ci::Area( texture.getCleanBounds() );
