@@ -36,6 +36,7 @@
 #include <gl.h>
 
 #include "ParticleSystem.h"
+#include "AudioAnalyzer.h"
 
 class NaiveEmitter : public ci::app::AppBasic {
 public:
@@ -49,6 +50,8 @@ public:
 	ci::gl::Texture texture;
 	std::vector<particle::ParticleSystem*> emitterList;
 	size_t totalParticleCount;
+
+	AudioAnalyzer audioAnalyzer;
 };
 
 void NaiveEmitter::prepareSettings( ci::app::AppBasic::Settings *settings ) {
@@ -60,9 +63,9 @@ void NaiveEmitter::setup() {
 
 	// Test loading a texture
 	ci::gl::Texture::Format format;
-	format.enableMipmapping( false );
-	format.setMinFilter( GL_NEAREST );
-	format.setMagFilter( GL_NEAREST );
+//	format.enableMipmapping( false );
+//	format.setMinFilter( GL_NEAREST );
+//	format.setMagFilter( GL_NEAREST );
 	texture = ci::gl::Texture( ci::loadImage( loadResource( RES_WHEEL ) ), format );
 
 	for( size_t i = 0; i < 300; ++i ) {
@@ -74,6 +77,9 @@ void NaiveEmitter::mouseDown( ci::app::MouseEvent event ) {
 	for(std::vector< particle::ParticleSystem*>::iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
 		(*itr)->clear();
 	}
+
+	if(event.isShiftDown())
+	setFullScreen( !isFullScreen() );
 }
 
 void NaiveEmitter::update() {
@@ -83,6 +89,8 @@ void NaiveEmitter::update() {
 		(*itr)->update();
 		totalParticleCount += (*itr)->particles.size();
 	}
+
+	audioAnalyzer.update();
 }
 
 void NaiveEmitter::draw() {
@@ -92,35 +100,51 @@ void NaiveEmitter::draw() {
 
 	ci::gl::enableAdditiveBlending();
 
+	ci::gl::setMatricesWindowPersp(getWindowWidth(), getWindowHeight(), 25, 1, 100000);
+
 	if( emitterList.size() == 0 ) return;
 	particle::ParticleSystem* emitter = emitterList.at( ci::Rand::randInt(0, emitterList.size() - 1 ) );
 
 	if ( texture ) {
 		ci::gl::color( ci::ColorA(1.0f, 1.0f, 1.0f, 1.0f) );
 
-			const float scale = ci::Rand::randFloat(0.1, 1.5);
+			const float scale = ci::Rand::randFloat(1, 3.5);
 			const float halfWidth = texture.getCleanWidth() / 2.0f * scale;
 			const float halfHeight = texture.getCleanHeight() / 2.0f * scale;
 
 
-			ci::Vec2f pos = getMousePos();
-			const ci::Area srcArea = ci::Area( texture.getCleanBounds() );
-			ci::Rectf destRect = ci::Rectf( pos.x-halfWidth, pos.y-halfHeight, pos.x + halfWidth, pos.y + halfHeight);
-			const ci::Rectf srcCoords = texture.getAreaTexCoords( srcArea );
+
+
 
 
 			// Add a particle to any random emitter
-			emitter->add( pos, ci::Rand::randVec2f() * 1.5, srcCoords, destRect );
+			static size_t itr = 0;
+
+			for( int i = 1; i < audioAnalyzer.getAverageVolume(); i++ ) {
+				ci::Vec2f pos = getWindowCenter();
+							pos.y += ci::Rand::randFloat(-200, 200);
+							if(++itr % 2 == 0) {
+								pos.x -= ci::Rand::randFloat(100, 200);
+							} else {
+								pos.x += ci::Rand::randFloat(100, 200);
+							}
+							const ci::Area srcArea = ci::Area( texture.getCleanBounds() );
+							ci::Rectf destRect = ci::Rectf( pos.x-halfWidth, pos.y-halfHeight, pos.x + halfWidth, pos.y + halfHeight);
+							const ci::Rectf srcCoords = texture.getAreaTexCoords( srcArea );
+
+				emitter->add( pos, ci::Rand::randVec2f() * 1.5, ci::ColorA(ci::CM_HSV, 0.5f + ci::Rand::randFloat()*0.5, 1.0, 0.8, 1.0), srcCoords, destRect );
+			}
+
 
 		texture.enableAndBind();
 			glEnableClientState( GL_VERTEX_ARRAY );
 			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 			glEnableClientState( GL_COLOR_ARRAY );
 				for(std::vector<particle::ParticleSystem*>::const_iterator itr = emitterList.begin(); itr != emitterList.end(); ++itr ) {
-					glVertexPointer( 2, GL_FLOAT, 0, &((*itr)->verts)[0] );
+					glVertexPointer( 3, GL_FLOAT, 0, &((*itr)->verts)[0] );
 					glTexCoordPointer( 2, GL_FLOAT, 0, &((*itr)->texCoords)[0] );
 					glColorPointer( 4, GL_FLOAT, 0, &((*itr)->colors)[0].r );
-					glDrawArrays( GL_TRIANGLES, 0, (*itr)->verts.size() / 2 );
+					glDrawArrays( GL_TRIANGLES, 0, (*itr)->verts.size() / 2.5 );
 				}
 			glDisableClientState( GL_VERTEX_ARRAY );
 			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
@@ -134,7 +158,7 @@ void NaiveEmitter::draw() {
 
 		static ci::Font font = ci::Font( "monaco", 10.0f );
 		std::stringstream ss;
-		ss << totalParticleCount << std::endl;
+		ss << audioAnalyzer.getAverageVolume() << std::endl;
 		ci::gl::drawString( ss.str(), ci::Vec2i(5, 5), ci::ColorA(1,1,1,1), font );
 	}
 }

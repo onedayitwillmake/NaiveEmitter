@@ -23,6 +23,7 @@ struct Particle {
 	ci::Vec2f speed;
 	ci::Vec2f originalPosition;
 	ci::Vec2f currentPosition;
+	float zspeed;
 };
 
 class ParticleSystem {
@@ -30,7 +31,7 @@ public:
 	ParticleSystem();
 	~ParticleSystem();
 
-	void add( ci::Vec2f pos, ci::Vec2f velocity, ci::Rectf srcCoords, ci::Rectf destRect );
+	void add( ci::Vec2f pos, ci::Vec2f velocity, ci::ColorA color, ci::Rectf srcCoords, ci::Rectf destRect );
 	void draw();
 	void update();
 	void clear();
